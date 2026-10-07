@@ -1,7 +1,14 @@
 import { useAuth } from '../context/useAuth'
 
-export function Navbar() {
+export function Navbar({ activeTab, onSelectTab }) {
   const { user, logout } = useAuth()
+
+  const tabs = [
+    { id: 'cycles', label: 'Historial de Ciclos' },
+    { id: 'connectivity', label: 'Red y Conectividad' },
+    { id: 'negotiations', label: 'Negociaciones' },
+    { id: 'audit', label: 'Registro de Auditoría' },
+  ]
 
   return (
     <header className="app-header">
@@ -21,6 +28,19 @@ export function Navbar() {
           </button>
         </div>
       </div>
+
+      <nav className="header-nav" aria-label="Navegación principal">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => onSelectTab(tab.id)}
+          >
+            <span className="tab-label">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
     </header>
   )
 }
