@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="sharkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B3540" />
+      <stop offset="100%" stop-color="#087782" />
+    </linearGradient>
+  </defs>
+  <!-- Fondo circular oscuro -->
+  <rect width="32" height="32" rx="8" fill="url(#sharkGrad)" />
+  
+  <!-- Aleta de tiburón estilizada / silueta -->
+  <path d="M6 23 C11 23, 14 17, 16 9 C18 17, 21 21, 26 23 Z" fill="#39D1C8" opacity="0.4" />
+  
+  <!-- Rayo eléctrico dinámico (Lima Energético) -->
+  <path d="M17 5 L10 17 L16 17 L14 27 L23 14 L17 14 Z" fill="#C6EE5C" stroke="#0B3540" stroke-width="0.8" stroke-linejoin="round" />
+</svg>

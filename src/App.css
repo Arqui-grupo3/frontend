@@ -1,0 +1,409 @@
+/* ==========================================================================
+   Paleta "Océano Eléctrico" — EnergyShark
+   Fase 1: Scaffold de la SPA con Login
+   ========================================================================== */
+:root {
+  /* Tokens de Identidad */
+  --color-abyssal: #0B3540;       /* Cabecera y superficies oscuras */
+  --color-ocean: #087782;         /* Botones y acentos primarios */
+  --color-ocean-hover: #065F68;   /* Hover para acciones primarias */
+  --color-turquoise: #39D1C8;     /* Acentos y datos destacados */
+  --color-lime: #C6EE5C;          /* Energía disponible o acción destacada */
+  --color-bg: #F4F8F8;            /* Fondo general (Blanco frío) */
+  --color-surface: #FFFFFF;       /* Tarjetas */
+  --color-text-main: #1C3035;     /* Texto principal (Carbón azulado) */
+  --color-text-muted: #4E656B;    /* Texto secundario (Gris océano) */
+  --color-border: #DCE5E7;        /* Bordes y separadores */
+
+  /* Estados Semánticos */
+  --color-success-bg: #DEF7EC;
+  --color-success-text: #03543F;
+  --color-error-bg: #FDE8E8;
+  --color-error-text: #9B1C1C;
+  --color-error-border: #F8B4B4;
+}
+
+/* --- Layout Principal --- */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+}
+
+.main-content {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px 24px 60px;
+}
+
+/* --- Cabecera de la Aplicación (Azul Abisal) --- */
+.app-header {
+  background-color: var(--color-abyssal);
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(57, 209, 200, 0.2);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px max(24px, calc((100vw - 1160px) / 2));
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+.brand-badge {
+  background: rgba(57, 209, 200, 0.15);
+  color: var(--color-turquoise);
+  border: 1px solid rgba(57, 209, 200, 0.35);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+
+.user-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.user-email {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-logout {
+  background: transparent;
+  color: #FCA5A5;
+  border: 1px solid rgba(252, 165, 165, 0.4);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #F87171;
+}
+
+/* --- Pantalla de Login --- */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #051A20 0%, var(--color-abyssal) 100%);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 20px 40px rgba(11, 53, 64, 0.3);
+  border: 1px solid var(--color-border);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-tag {
+  display: inline-block;
+  background: rgba(8, 119, 130, 0.1);
+  color: var(--color-ocean);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.login-title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  color: var(--color-abyssal);
+  letter-spacing: -0.03em;
+}
+
+.login-subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"] {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--color-text-main);
+  background: #FFFFFF;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-group input:focus {
+  border-color: var(--color-ocean);
+  box-shadow: 0 0 0 3px rgba(8, 119, 130, 0.18);
+}
+
+.btn-primary {
+  background: var(--color-ocean);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-ocean-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #EAF2F3;
+  color: var(--color-ocean);
+  border: 1px solid #D1DFE1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: #DFECED;
+  color: var(--color-abyssal);
+}
+
+.alert-error {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid var(--color-error-border);
+}
+
+.login-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.badge-g06 {
+  display: inline-block;
+  background: #EAF0F1;
+  color: var(--color-ocean);
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.login-footer small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* --- Scaffold Post-Login --- */
+.scaffold-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 32px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scaffold-tag {
+  display: inline-block;
+  background: rgba(8, 119, 130, 0.1);
+  color: var(--color-ocean);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.scaffold-card h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+  color: var(--color-abyssal);
+}
+
+.scaffold-desc {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+.session-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 24px;
+}
+
+.session-details > div {
+  background: #F7FAFA;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.session-details .label {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.session-details strong {
+  display: block;
+  font-size: 15px;
+  color: var(--color-text-main);
+}
+
+.pill-active {
+  display: inline-block;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* --- Loading Spinner & Footer --- */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg);
+  color: var(--color-abyssal);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-ocean);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.app-footer {
+  border-top: 1px solid var(--color-border);
+  background: #FFFFFF;
+  padding: 16px 24px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.app-footer > div {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 600px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .user-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .app-footer > div {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

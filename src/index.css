@@ -1,0 +1,17 @@
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1C3035;
+  background-color: #F4F8F8;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: #F4F8F8;
+  color: #1C3035;
+}
