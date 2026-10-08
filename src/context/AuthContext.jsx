@@ -16,5 +16,7 @@ export function AuthProvider({ children }) {
     domain={domain}
     clientId={clientId}
     authorizationParams={{ redirect_uri: window.location.origin, audience }}
+    cacheLocation="localstorage"
+    useRefreshTokens={true}
   >{children}</Auth0Provider>
 }

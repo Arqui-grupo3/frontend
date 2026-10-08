@@ -20,30 +20,6 @@ const KNOWN_CITY_NAMES = {
   REE: 'EnergyShark (REE)',
 }
 
-const INITIAL_PROPOSALS = [
-  {
-    id: 'prop-8821',
-    direction: 'give',
-    quantity: 2024,
-    pricePerEnergy: 220.5,
-    status: 'Pagada',
-    created: '13:52:10',
-    confirmedAt: '13:52:25',
-    paidAt: '13:52:38',
-    cycleId: 'cycle-9431',
-  },
-  {
-    id: 'prop-8819',
-    direction: 'take',
-    quantity: 500,
-    pricePerEnergy: 210,
-    status: 'Expirada por timeout',
-    created: '13:45:00',
-    confirmedAt: null,
-    paidAt: null,
-    cycleId: 'cycle-9431',
-  },
-]
 
 const INITIAL_AUDIT_LOGS = [
   {
@@ -170,7 +146,9 @@ function mapEventToOperation(ev, isLast) {
     case 'give':
     case 'take': {
       name = `Confirmación Central (${ev.type})`
-      detail = `Confirmación de energía: ${(data.quantity || 0).toLocaleString('es-CL')} kWh`
+      const energyQty = data.energy ?? data.quantity ?? 0
+      const priceVal = data.pricePerEnergy ?? data.price ?? null
+      detail = `Confirmación de energía: ${Number(energyQty).toLocaleString('es-CL')} kWh${priceVal !== null ? ` @ $${priceVal} créditos/kWh` : ''}`
       break
     }
     case 'negotiation-report': {
@@ -333,6 +311,64 @@ function normalizeConnectivity(res) {
   }
 }
 
+function normalizeNegotiation(item) {
+  const id = item.idpk || item.id || item.lastMsgId || item.msgId || 'prop'
+  const cycleId = item.cycleId || item.cycle_id || 'N/A'
+  const direction = String(item.direction || item.data?.direction || 'give').toLowerCase()
+  const quantity = Number(item.quantity ?? item.data?.quantity ?? item.energyAgreed ?? 0)
+  const pricePerEnergy = Number(
+    item.pricePerEnergy ?? item.price_per_energy ?? item.data?.pricePerEnergy ?? item.priceAgreed ?? 0
+  )
+
+  const rawStatus = String(item.status || 'pending').toLowerCase()
+  let statusBadge = 'pill-warning'
+  let statusText = 'Pendiente'
+
+  if (rawStatus === 'paid' || rawStatus === 'pagada') {
+    statusBadge = 'pill-active'
+    statusText = 'Pagada'
+  } else if (rawStatus === 'confirmed' || rawStatus === 'confirmada') {
+    statusBadge = 'pill-warning'
+    statusText = direction === 'take' ? 'Confirmada (Pagando)' : 'Confirmada (Esperando Pago)'
+  } else if (rawStatus === 'expired' || rawStatus.includes('timeout')) {
+    statusBadge = 'pill-error'
+    statusText = 'Expirada por timeout'
+  } else if (rawStatus === 'failed' || rawStatus === 'fallida') {
+    statusBadge = 'pill-error'
+    statusText = item.lastError ? `Fallida (${item.lastError})` : 'Fallida'
+  } else {
+    statusBadge = 'pill-warning'
+    statusText = 'Pendiente (Esperando confirmación)'
+  }
+
+  const createdAt = item.createdAt || item.created_at || item.receivedAt || item.received_at
+  const createdTime = formatTime(createdAt)
+  const createdDate = formatDate(createdAt)
+
+  return {
+    id,
+    idpk: item.idpk || id,
+    cycleId,
+    direction,
+    quantity,
+    pricePerEnergy,
+    status: statusText,
+    rawStatus,
+    statusBadge,
+    phase: item.phase || null,
+    attempts: item.attempts || 0,
+    energyAgreed: item.energyAgreed ? Number(item.energyAgreed) : null,
+    priceAgreed: item.priceAgreed ? Number(item.priceAgreed) : null,
+    paymentAmount: item.paymentAmount ? Number(item.paymentAmount) : null,
+    confirmationMsgId: item.confirmationMsgId || null,
+    paymentMsgId: item.paymentMsgId || null,
+    lastError: item.lastError || null,
+    created: createdTime,
+    createdDate,
+    rawCreatedAt: createdAt,
+  }
+}
+
 export const dataService = {
   getCycles: async (token) => {
     const res = await apiRequest('/cycles?limit=50', token)
@@ -352,7 +388,32 @@ export const dataService = {
     return normalizeConnectivity(res)
   },
 
-  getProposals: () => [...INITIAL_PROPOSALS],
+  getNegotiations: async (cycleId, token) => {
+    const query = cycleId ? `?cycleId=${encodeURIComponent(cycleId)}&limit=50` : '?limit=50'
+    const res = await apiRequest(`/negotiations${query}`, token)
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return list.map(normalizeNegotiation)
+  },
+
+  getProposals: async (token) => {
+    const res = await apiRequest('/negotiations?limit=50', token)
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return list.map(normalizeNegotiation)
+  },
+
+  createProposal: async (proposalData, token) => {
+    return await apiRequest('/negotiations', token, {
+      method: 'POST',
+      body: JSON.stringify({
+        cycleId: proposalData.cycleId,
+        direction: proposalData.direction,
+        quantity: Number(proposalData.quantity),
+        pricePerEnergy: Number(proposalData.pricePerEnergy),
+      }),
+    })
+  },
+
   getAuditLogs: () => [...INITIAL_AUDIT_LOGS],
 }
+
 
