@@ -21,52 +21,6 @@ const KNOWN_CITY_NAMES = {
 }
 
 
-const INITIAL_AUDIT_LOGS = [
-  {
-    id: 'evt-101',
-    timestamp: '13:54:12',
-    category: 'DUPLICADO',
-    type: 'transfer',
-    idpk: 'e7b8c8d2-4311-41bb-9cb1-e8d11122a001',
-    msgId: 'a32f0190-b141-4771-bf12-441299900001',
-    action: 'IGNORADO',
-    detail: 'Mensaje con idpk ya registrado en el ledger. Previene cobro doble o desbalance.',
-    statusBadge: 'badge-dup',
-  },
-  {
-    id: 'evt-102',
-    timestamp: '13:51:05',
-    category: 'NACK',
-    type: 'invalid-command',
-    idpk: 'c1299381-44bb-4911-8899-019992224411',
-    msgId: 'd4811099-0012-4781-a991-881233441122',
-    action: 'NACK (400 UNKNOWN_TYPE)',
-    detail: 'UNKNOWN_TYPE: Tipo de mensaje no reconocido por la especificación de la central.',
-    statusBadge: 'badge-nack',
-  },
-  {
-    id: 'evt-103',
-    timestamp: '13:48:22',
-    category: 'DESCARTE',
-    type: 'malformed_raw',
-    idpk: 'n/a',
-    msgId: 'AUSENTE',
-    action: 'DESCARTADO SIN RESPUESTA',
-    detail: 'Mensaje sin msgId o JSON corrupto. No existe remitente válido a quien responder NACK.',
-    statusBadge: 'badge-discard',
-  },
-  {
-    id: 'evt-104',
-    timestamp: '13:42:18',
-    category: 'NACK',
-    type: 'negotiation-proposal',
-    idpk: 'f8821901-aaaa-bbbb-cccc-112233445566',
-    msgId: 'f8821901-aaaa-bbbb-cccc-112233445566',
-    action: 'NACK (422 IDPK_EQUALS_MSGID)',
-    detail: 'IDPK_EQUALS_MSGID: La llave de idempotencia (idpk) no puede ser idéntica al msgId.',
-    statusBadge: 'badge-nack',
-  },
-]
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || (
   typeof window !== 'undefined' && window.location.hostname.includes('fasantamaria.me')
@@ -369,6 +323,80 @@ function normalizeNegotiation(item) {
   }
 }
 
+function normalizeAuditLog(item) {
+  const id = item.id || `audit-${Math.random().toString(36).substring(2, 9)}`
+  const reason = String(item.reason || 'UNKNOWN').toUpperCase()
+
+  let category = 'OTRO'
+  let statusBadge = 'badge-discard'
+  let defaultAction = 'REGISTRADO'
+
+  if (reason === 'DUPLICATE_IDPK') {
+    category = 'DUPLICADO'
+    statusBadge = 'badge-dup'
+    defaultAction = 'IGNORADO (IDEMPOTENCIA)'
+  } else if (reason === 'NACK') {
+    category = 'NACK'
+    statusBadge = 'badge-nack'
+    const code = item.details?.code || item.details?.nackCode || ''
+    const nackReason = item.details?.nackReason || ''
+    defaultAction = code || nackReason ? `NACK (${[code, nackReason].filter(Boolean).join(' ')})` : 'NACK'
+  } else if (reason === 'DISCARDED') {
+    category = 'DESCARTE'
+    statusBadge = 'badge-discard'
+    defaultAction = 'DESCARTADO SIN RESPUESTA'
+  }
+
+  let detail = ''
+  if (typeof item.details === 'string') {
+    detail = item.details
+  } else if (item.details && typeof item.details === 'object') {
+    if (item.details.message) {
+      detail = item.details.message
+      if (item.details.error) detail += ` (${item.details.error})`
+    } else if (item.details.routingKey) {
+      detail = `Routing key inesperada descartada: ${item.details.routingKey}`
+    } else if (item.details.nackReason) {
+      detail = `${item.details.nackReason}: ${item.details.message || 'Contrato violado'}`
+    } else if (item.details.originalEventId) {
+      detail = `Operación con idpk ya registrada previamente (evento ${item.details.originalEventId.slice(0, 8)}...). Deduplicado.`
+    } else if (Object.keys(item.details).length > 0) {
+      try {
+        detail = JSON.stringify(item.details)
+      } catch {
+        detail = 'Detalles adicionales registrados.'
+      }
+    }
+  }
+
+  if (!detail) {
+    if (reason === 'DUPLICATE_IDPK') detail = 'Mensaje con idpk ya registrado en el ledger. Previene cobro doble o desbalance.'
+    else if (reason === 'DISCARDED') detail = 'Mensaje descartado por falta de msgId o formato corrupto.'
+    else if (reason === 'NACK') detail = 'Mensaje rechazado por violación de contrato o validación.'
+    else detail = 'Registro de auditoría del sistema.'
+  }
+
+  const timestamp = formatTime(item.receivedAt || item.received_at)
+  const fullDate = formatDate(item.receivedAt || item.received_at)
+
+  return {
+    id,
+    timestamp,
+    fullDate,
+    category,
+    rawReason: reason,
+    type: item.type || 'unknown',
+    idpk: item.idpk || 'n/a',
+    msgId: item.msgId || item.msg_id || 'AUSENTE',
+    cycleId: item.cycleId || item.cycle_id || null,
+    action: defaultAction,
+    detail,
+    statusBadge,
+    rawDetails: item.details,
+    rawReceivedAt: item.receivedAt || item.received_at,
+  }
+}
+
 export const dataService = {
   getCycles: async (token) => {
     const res = await apiRequest('/cycles?limit=50', token)
@@ -413,7 +441,38 @@ export const dataService = {
     })
   },
 
-  getAuditLogs: () => [...INITIAL_AUDIT_LOGS],
+  getAuditLogs: async (filters = {}, token) => {
+    let reasonParam = null
+    const rawFilter = String(filters.reason || filters.category || '').toUpperCase()
+    if (rawFilter === 'DUPLICADO' || rawFilter === 'DUPLICATE_IDPK') {
+      reasonParam = 'DUPLICATE_IDPK'
+    } else if (rawFilter === 'NACK') {
+      reasonParam = 'NACK'
+    } else if (rawFilter === 'DESCARTE' || rawFilter === 'DISCARDED') {
+      reasonParam = 'DISCARDED'
+    }
+
+    const page = Math.max(parseInt(filters.page, 10) || 1, 1)
+    const limit = Math.min(Math.max(parseInt(filters.limit, 10) || 25, 1), 100)
+
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('limit', String(limit))
+    if (reasonParam) {
+      params.set('reason', reasonParam)
+    }
+
+    const res = await apiRequest(`/audit?${params.toString()}`, token)
+    const rows = Array.isArray(res?.data) ? res.data : []
+    return {
+      page: res.page || page,
+      limit: res.limit || limit,
+      total: res.total ?? rows.length,
+      totalPages: res.totalPages ?? (rows.length ? 1 : 0),
+      data: rows.map(normalizeAuditLog),
+    }
+  },
 }
+
 
 
