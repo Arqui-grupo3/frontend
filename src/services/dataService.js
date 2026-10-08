@@ -5,104 +5,20 @@
  * la API REST definitiva de P4 (API Gateway) sin alterar los componentes.
  */
 
-const INITIAL_CYCLES = [
-  {
-    id: 'cycle-9431',
-    period: '14:00 – 16:00',
-    date: '6 oct 2026',
-    status: 'Reporte Enviado',
-    generationCapacity: 1234512,
-    consumption: 1444121,
-    generationCost: 210,
-    funds: 508145,
-    budgetBalance: 476645,
-    energyBalance: 450,
-    operations: [
-      {
-        time: '13:40:02',
-        type: 'status-statement',
-        name: 'Capacidad y Consumo Recibido',
-        detail: 'Capacidad 1.234.512 kWh · Consumo proyectado 1.444.121 kWh · Costo base 210 créditos',
-      },
-      {
-        time: '13:40:15',
-        type: 'transfer',
-        name: 'Fondos Iniciales Transferidos',
-        detail: 'Transferencia inicial de la central recibida: +508.145 créditos',
-      },
-      {
-        time: '13:47:30',
-        type: 'demand-statement',
-        name: 'Bolsa de Energía de la Central',
-        detail: 'Orden central aplicada: +1.500 kWh · Deducción de presupuesto (1.500 × 215 = -322.500 créditos)',
-      },
-      {
-        time: '13:52:10',
-        type: 'negotiation-proposal',
-        name: 'Propuesta Voluntaria Emitida (Give)',
-        detail: 'Venta a la central ofertada: 2.024 kWh @ 220.5 créditos (tope con 5% premium)',
-      },
-      {
-        time: '13:52:25',
-        type: 'give-confirmation',
-        name: 'Confirmación y Pago de Negociación',
-        detail: 'Confirmado por la central en 15s (≤30s) y transfer emitido a tiempo (+446.292 créditos)',
-      },
-      {
-        time: '13:55:01',
-        type: 'negotiation-report',
-        name: 'Reporte de Cierre Emitido',
-        detail: 'negotiation-report enviado en ventana de cierre. Presupuesto final: 476.645 · Balance energía: 450 kWh',
-      },
-    ],
-  },
-  {
-    id: 'cycle-9430',
-    period: '12:00 – 14:00',
-    date: '6 oct 2026',
-    status: 'Cerrado',
-    generationCapacity: 1100000,
-    consumption: 1250000,
-    generationCost: 205,
-    funds: 450000,
-    budgetBalance: 412000,
-    energyBalance: 380,
-    operations: [
-      {
-        time: '11:40:00',
-        type: 'status-statement',
-        name: 'Capacidad y Consumo Recibido',
-        detail: 'Capacidad 1.100.000 kWh · Consumo proyectado 1.250.000 kWh',
-      },
-      {
-        time: '11:40:10',
-        type: 'transfer',
-        name: 'Fondos Iniciales Transferidos',
-        detail: 'Transferencia inicial recibida: +450.000 créditos',
-      },
-      {
-        time: '11:55:05',
-        type: 'negotiation-report',
-        name: 'Reporte de Cierre Emitido',
-        detail: 'Reporte enviado dentro del periodo de cierre con éxito.',
-      },
-    ],
-  },
-]
-
-const INITIAL_DISTANCES = [
-  { code: 'HGW', name: 'Hogwarts', distance: 62763183, transportCost: 0.0034, enabled: true },
-  { code: 'COR', name: 'Coruscant', distance: 81240900, transportCost: 0.0028, enabled: true },
-  { code: 'RAP', name: 'Rapture', distance: 45910300, transportCost: 0.0041, enabled: false },
-  { code: 'TAL', name: 'Talca', distance: 250000, transportCost: 0.0012, enabled: true },
-  { code: 'LSN', name: 'Los Santos', distance: 54120300, transportCost: 0.0032, enabled: true },
-  { code: 'MTI', name: 'Minas Tirith', distance: 78900400, transportCost: 0.0039, enabled: true },
-  { code: 'SPR', name: 'Springfield', distance: 34100200, transportCost: 0.0022, enabled: true },
-  { code: 'NNY', name: 'New New York', distance: 89120400, transportCost: 0.0035, enabled: false },
-  { code: 'KLD', name: "King's Landing", distance: 67100500, transportCost: 0.0030, enabled: true },
-  { code: 'TAR', name: 'Tar Valon', distance: 94306517, transportCost: 0.0013, enabled: true },
-  { code: 'TK3', name: 'Tokyo-3', distance: 112000400, transportCost: 0.0045, enabled: true },
-]
+const KNOWN_CITY_NAMES = {
+  HGW: 'Hogwarts',
+  COR: 'Coruscant',
+  RAP: 'Rapture',
+  TAL: 'Talca',
+  LSN: 'Los Santos',
+  MTI: 'Minas Tirith',
+  SPR: 'Springfield',
+  NNY: 'New New York',
+  KLD: "King's Landing",
+  TAR: 'Tar Valon',
+  TK3: 'Tokyo-3',
+  REE: 'EnergyShark (REE)',
+}
 
 const INITIAL_PROPOSALS = [
   {
@@ -176,9 +92,267 @@ const INITIAL_AUDIT_LOGS = [
   },
 ]
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || (
+  typeof window !== 'undefined' && window.location.hostname.includes('fasantamaria.me')
+    ? 'https://api.fasantamaria.me'
+    : 'http://localhost:3000'
+)
+
+async function apiRequest(path, token, options = {}) {
+  const url = `${API_BASE_URL}${path}`
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  }
+
+  const response = await fetch(url, { ...options, headers })
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    const err = new Error(errorBody.error || errorBody.message || `Error HTTP ${response.status}`)
+    err.status = response.status
+    throw err
+  }
+  return response.json()
+}
+
+function formatTime(isoStr) {
+  if (!isoStr) return '--:--:--'
+  try {
+    const d = new Date(isoStr)
+    return isNaN(d.getTime()) ? isoStr : d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  } catch {
+    return isoStr
+  }
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return 'Fecha desconocida'
+  try {
+    const d = new Date(isoStr)
+    return isNaN(d.getTime()) ? isoStr : d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return isoStr
+  }
+}
+
+function mapEventToOperation(ev, isLast) {
+  const time = formatTime(ev.receivedAt)
+  const data = ev.data || {}
+
+  let name = ev.type
+  let detail = ''
+
+  switch (ev.type) {
+    case 'status-statement': {
+      name = 'Capacidad y Consumo Recibido'
+      const en = data.energy || data
+      detail = `Capacidad: ${(en.generationCapacity || 0).toLocaleString('es-CL')} kWh · Consumo: ${(en.consumption || 0).toLocaleString('es-CL')} kWh · Costo base: $${en.generationCost ?? 0} créditos`
+      break
+    }
+    case 'transfer': {
+      name = 'Transferencia de Fondos'
+      const qty = data.quantity ?? data.amount ?? 0
+      detail = `Transferencia recibida: +${qty.toLocaleString('es-CL')} créditos${data.becauseOf ? ` · Ref: ${data.becauseOf}` : ''}`
+      break
+    }
+    case 'demand-statement': {
+      name = 'Bolsa de Energía de la Central'
+      const bal = data.balance || data
+      detail = `Orden central: ${(bal.quantity || 0).toLocaleString('es-CL')} kWh @ $${bal.valuePerKwh ?? 0} créditos/kWh`
+      break
+    }
+    case 'negotiation-proposal': {
+      name = `Propuesta Voluntaria (${data.direction || 'give'})`
+      detail = `Oferta emitida: ${(data.quantity || 0).toLocaleString('es-CL')} kWh @ $${data.pricePerEnergy ?? 0} créditos`
+      break
+    }
+    case 'give':
+    case 'take': {
+      name = `Confirmación Central (${ev.type})`
+      detail = `Confirmación de energía: ${(data.quantity || 0).toLocaleString('es-CL')} kWh`
+      break
+    }
+    case 'negotiation-report': {
+      name = 'Reporte de Cierre Emitido'
+      detail = `Reporte en ventana de cierre. Presupuesto: ${(data.budgetBalance || 0).toLocaleString('es-CL')} créditos · Balance energía: ${(data.energyBalance || 0).toLocaleString('es-CL')} kWh`
+      break
+    }
+    default: {
+      name = `Operación: ${ev.type}`
+      detail = `Procesada en el ledger (idpk: ${ev.idpk || 'n/a'})`
+    }
+  }
+
+  return {
+    time,
+    type: ev.type,
+    name,
+    detail,
+    isLast: !!isLast || ev.lastOperation === true,
+  }
+}
+
+function normalizeCycle(c) {
+  const firstStatus = c.statusStatements?.[0] || {}
+  const statusEnergy = firstStatus.energy || firstStatus
+  const firstTransfer = c.transfers?.[0] || {}
+  const finalBal = c.finalBalances || {}
+
+  let status = 'En curso'
+  if (c.lastOperationType === 'negotiation-report') {
+    status = 'Reporte Enviado (Cerrado)'
+  } else if (c.lastOperationType) {
+    status = `Última op: ${c.lastOperationType}`
+  }
+
+  const operations = []
+
+  ;(c.statusStatements || []).forEach((st) => {
+    const en = st.energy || st
+    operations.push({
+      time: formatTime(st.validUntil || c.startedAt),
+      type: 'status-statement',
+      name: 'Capacidad y Consumo Recibido',
+      detail: `Capacidad: ${(en.generationCapacity || 0).toLocaleString('es-CL')} kWh · Consumo: ${(en.consumption || 0).toLocaleString('es-CL')} kWh · Costo base: $${en.generationCost ?? 0} créditos`,
+    })
+  })
+
+  ;(c.transfers || []).forEach((tr) => {
+    operations.push({
+      time: formatTime(c.startedAt),
+      type: 'transfer',
+      name: 'Fondos Iniciales Transferidos',
+      detail: `Transferencia recibida: +${(tr.quantity || tr.funds || 0).toLocaleString('es-CL')} créditos${tr.becauseOf ? ` · Ref: ${tr.becauseOf}` : ''}`,
+    })
+  })
+
+  ;(c.demandStatements || []).forEach((dm) => {
+    const bal = dm.balance || dm
+    operations.push({
+      time: formatTime(c.lastOperationAt),
+      type: 'demand-statement',
+      name: 'Bolsa de Energía Central',
+      detail: `Orden central: ${(bal.quantity || 0).toLocaleString('es-CL')} kWh @ $${bal.valuePerKwh ?? 0} créditos/kWh`,
+    })
+  })
+
+  ;(c.negotiations || []).forEach((ng) => {
+    operations.push({
+      time: formatTime(c.lastOperationAt),
+      type: 'negotiation-proposal',
+      name: `Propuesta de Negociación (${ng.direction || 'voluntaria'})`,
+      detail: `Cantidad: ${(ng.quantity || 0).toLocaleString('es-CL')} kWh @ $${ng.pricePerEnergy ?? 0} créditos`,
+    })
+  })
+
+  ;(c.negotiationReports || []).forEach((nr) => {
+    operations.push({
+      time: formatTime(c.lastOperationAt),
+      type: 'negotiation-report',
+      name: 'Reporte de Cierre Emitido',
+      detail: `Reporte en ventana de cierre. Presupuesto final: ${(nr.budgetBalance || 0).toLocaleString('es-CL')} créditos · Balance: ${(nr.energyBalance || 0).toLocaleString('es-CL')} kWh`,
+    })
+  })
+
+  if (operations.length === 0 && c.lastOperationType) {
+    operations.push({
+      time: formatTime(c.lastOperationAt),
+      type: c.lastOperationType,
+      name: `Operación: ${c.lastOperationType}`,
+      detail: `Última operación registrada a las ${formatTime(c.lastOperationAt)} (${c.operationCount || 1} operaciones en total).`,
+    })
+  }
+
+  return {
+    id: c.cycleId || 'Ciclo',
+    cycleId: c.cycleId,
+    period: `${formatTime(c.startedAt)} – ${formatTime(c.lastOperationAt)}`,
+    date: formatDate(c.startedAt || c.lastOperationAt),
+    status,
+    budgetBalance: finalBal.budgetBalance ?? firstTransfer.quantity ?? 0,
+    energyBalance: finalBal.energyBalance ?? 0,
+    generationCapacity: statusEnergy.generationCapacity ?? 0,
+    consumption: statusEnergy.consumption ?? 0,
+    generationCost: statusEnergy.generationCost ?? 0,
+    funds: firstTransfer.quantity ?? 0,
+    operationCount: c.operationCount || operations.length,
+    lastOperationType: c.lastOperationType,
+    lastOperationAt: c.lastOperationAt,
+    operations,
+  }
+}
+
+function normalizeConnectivity(res) {
+  if (!res) {
+    return {
+      id: null,
+      cycleId: null,
+      receivedAt: null,
+      distances: [],
+    }
+  }
+
+  const rawDistances = res.data?.distances || res.data || {}
+  const distances = []
+
+  if (Array.isArray(rawDistances)) {
+    rawDistances.forEach((item) => {
+      const code = String(item.code || item.destination || item.cityId || '').toUpperCase()
+      if (!code) return
+      distances.push({
+        code,
+        name: item.name || KNOWN_CITY_NAMES[code] || code,
+        distance: Number(item.distance) || 0,
+        transportCost: Number(item.transportCost) || 0,
+        enabled: Boolean(item.enabled),
+      })
+    })
+  } else if (rawDistances && typeof rawDistances === 'object') {
+    Object.entries(rawDistances).forEach(([key, val]) => {
+      if (val && typeof val === 'object') {
+        const code = key.toUpperCase()
+        distances.push({
+          code,
+          name: val.name || KNOWN_CITY_NAMES[code] || code,
+          distance: Number(val.distance) || 0,
+          transportCost: Number(val.transportCost) || 0,
+          enabled: Boolean(val.enabled),
+        })
+      }
+    })
+  }
+
+  distances.sort((a, b) => a.code.localeCompare(b.code))
+
+  return {
+    id: res.id || null,
+    cycleId: res.cycleId || null,
+    receivedAt: res.receivedAt || null,
+    distances,
+  }
+}
+
 export const dataService = {
-  getCycles: () => [...INITIAL_CYCLES],
-  getConnectivity: () => [...INITIAL_DISTANCES],
+  getCycles: async (token) => {
+    const res = await apiRequest('/cycles?limit=50', token)
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return list.map(normalizeCycle)
+  },
+
+  getCycleOperations: async (cycleId, token) => {
+    if (!cycleId) return []
+    const res = await apiRequest(`/history?cycleId=${encodeURIComponent(cycleId)}&limit=100`, token)
+    const events = Array.isArray(res) ? res : (res?.data || [])
+    return events.map((ev, idx) => mapEventToOperation(ev, idx === events.length - 1))
+  },
+
+  getConnectivity: async (token) => {
+    const res = await apiRequest('/connectivity', token)
+    return normalizeConnectivity(res)
+  },
+
   getProposals: () => [...INITIAL_PROPOSALS],
   getAuditLogs: () => [...INITIAL_AUDIT_LOGS],
 }
+
