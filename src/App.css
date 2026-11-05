@@ -998,3 +998,39 @@ h1 {
   word-break: break-all;
 }
 
+
+/* --- Experimento de span (RF06) --- */
+.span-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.span-bar {
+  position: relative;
+  min-width: 140px;
+  height: 22px;
+  background: #EDF2F3;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.span-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(57, 209, 200, 0.45);
+}
+
+.span-bar span {
+  position: relative;
+  display: block;
+  padding: 0 8px;
+  line-height: 22px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-abyssal);
+}
+
+@media (max-width: 900px) {
+  .span-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
