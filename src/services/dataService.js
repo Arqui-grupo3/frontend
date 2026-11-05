@@ -472,7 +472,26 @@ export const dataService = {
       data: rows.map(normalizeAuditLog),
     }
   },
+
+  // RF06: experimento de span (resumen por span, detalle por ciclo y contrafactual del libro)
+  getSpanExperiment: async (filters = {}, token) => {
+    const params = new URLSearchParams()
+    params.set('limit', String(Math.min(Math.max(parseInt(filters.limit, 10) || 50, 1), 100)))
+    params.set('onlyDeficit', filters.onlyDeficit === false ? 'false' : 'true')
+    if (filters.since) params.set('since', filters.since)
+
+    const res = await apiRequest(`/experiment/span?${params.toString()}`, token)
+    return {
+      since: res?.since || null,
+      summary: Array.isArray(res?.summary) ? res.summary : [],
+      book: Array.isArray(res?.book) ? res.book : [],
+      cycles: (Array.isArray(res?.cycles) ? res.cycles : []).map((c) => ({
+        ...c,
+        time: formatTime(c.opensAt),
+        date: formatDate(c.opensAt),
+        coveragePct: c.deficitKwh > 0 ? (100 * (c.coveredKwh || 0)) / c.deficitKwh : null,
+        savingsPct: c.baseline > 0 ? (100 * (c.savings || 0)) / c.baseline : null,
+      })),
+    }
+  },
 }
-
-
-

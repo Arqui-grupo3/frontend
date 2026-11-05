@@ -8,6 +8,7 @@ export function Navbar({ activeTab, onSelectTab }) {
     { id: 'connectivity', label: 'Red y Conectividad' },
     { id: 'negotiations', label: 'Negociaciones' },
     { id: 'audit', label: 'Registro de Auditoría' },
+    { id: 'span', label: 'Experimento de Span' },
   ]
 
   return (

@@ -7,6 +7,7 @@ import { CycleHistory } from './components/CycleHistory'
 import { ConnectivityView } from './components/ConnectivityView'
 import { NegotiationView } from './components/NegotiationView'
 import { AuditLogView } from './components/AuditLogView'
+import { SpanExperimentView } from './components/SpanExperimentView'
 import './App.css'
 
 function AppContent() {
@@ -34,6 +35,7 @@ function AppContent() {
         {activeTab === 'connectivity' && <ConnectivityView />}
         {activeTab === 'negotiations' && <NegotiationView />}
         {activeTab === 'audit' && <AuditLogView />}
+        {activeTab === 'span' && <SpanExperimentView />}
       </main>
       <footer className="app-footer">
         <div>
