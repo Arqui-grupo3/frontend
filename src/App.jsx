@@ -4,8 +4,9 @@ import { useAuth } from './context/useAuth'
 import { Login } from './components/Login'
 import { Navbar } from './components/Navbar'
 import { CycleHistory } from './components/CycleHistory'
-import { ConnectivityView } from './components/ConnectivityView'
-import { NegotiationView } from './components/NegotiationView'
+import { MarketLiveView } from './components/MarketLiveView'
+import { MarketAdminView } from './components/MarketAdminView'
+import { SpanExperimentView } from './components/SpanExperimentView'
 import { AuditLogView } from './components/AuditLogView'
 import './App.css'
 
@@ -31,8 +32,9 @@ function AppContent() {
       <Navbar activeTab={activeTab} onSelectTab={setActiveTab} />
       <main className="main-content">
         {activeTab === 'cycles' && <CycleHistory />}
-        {activeTab === 'connectivity' && <ConnectivityView />}
-        {activeTab === 'negotiations' && <NegotiationView />}
+        {activeTab === 'live-market' && <MarketLiveView />}
+        {activeTab === 'admin' && <MarketAdminView />}
+        {activeTab === 'experiment' && <SpanExperimentView />}
         {activeTab === 'audit' && <AuditLogView />}
       </main>
       <footer className="app-footer">

@@ -23,7 +23,7 @@ const KNOWN_CITY_NAMES = {
 
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || (
-  typeof window !== 'undefined' && window.location.hostname.includes('fasantamaria.me')
+  typeof window !== 'undefined' && (window.location.hostname.includes('fasantamaria.me') || window.location.protocol === 'https:')
     ? 'https://api.fasantamaria.me'
     : 'http://localhost:3000'
 )
@@ -402,6 +402,47 @@ export const dataService = {
     const res = await apiRequest('/cycles?limit=50', token)
     const list = Array.isArray(res) ? res : (res?.data || [])
     return list.map(normalizeCycle)
+  },
+
+  getCycleDetail: async (cycleId, token) => {
+    if (!cycleId) return null
+    return await apiRequest(`/cycles/${encodeURIComponent(cycleId)}`, token)
+  },
+
+  getLiveMarket: async (token) => {
+    const res = await apiRequest('/market/live', token)
+    return {
+      offers: Array.isArray(res?.offers) ? res.offers : [],
+      distanceTableMeta: res?.distanceTableMeta || {},
+    }
+  },
+
+  getAdminConfig: async (token) => {
+    return await apiRequest('/admin/config', token)
+  },
+
+  updateAdminConfig: async (config, token) => {
+    return await apiRequest('/admin/config', token, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    })
+  },
+
+  getAdminSwaps: async (token) => {
+    const res = await apiRequest('/admin/swaps', token)
+    return {
+      sellerBids: Array.isArray(res?.sellerBids) ? res.sellerBids : [],
+      walletOperations: Array.isArray(res?.walletOperations) ? res.walletOperations : [],
+    }
+  },
+
+  getSpanExperiment: async (token) => {
+    const res = await apiRequest('/experiment/span', token)
+    return {
+      cycles: Array.isArray(res?.cycles) ? res.cycles : [],
+      aggregated: Array.isArray(res?.aggregated) ? res.aggregated : [],
+      currentSpan: res?.currentSpan ?? 360,
+    }
   },
 
   getCycleOperations: async (cycleId, token) => {
