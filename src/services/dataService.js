@@ -436,15 +436,6 @@ export const dataService = {
     }
   },
 
-  getSpanExperiment: async (token) => {
-    const res = await apiRequest('/experiment/span', token)
-    return {
-      cycles: Array.isArray(res?.cycles) ? res.cycles : [],
-      aggregated: Array.isArray(res?.aggregated) ? res.aggregated : [],
-      currentSpan: res?.currentSpan ?? 360,
-    }
-  },
-
   getCycleOperations: async (cycleId, token) => {
     if (!cycleId) return []
     const res = await apiRequest(`/history?cycleId=${encodeURIComponent(cycleId)}&limit=100`, token)
@@ -513,7 +504,34 @@ export const dataService = {
       data: rows.map(normalizeAuditLog),
     }
   },
+
+  // RF06: experimento de span (resumen por span, detalle por ciclo y contrafactual del libro)
+  getSpanExperiment: async (filters = {}, token) => {
+    let actualToken = token
+    let actualFilters = filters
+    if (typeof filters === 'string') {
+      actualToken = filters
+      actualFilters = {}
+    }
+    const params = new URLSearchParams()
+    params.set('limit', String(Math.min(Math.max(parseInt(actualFilters?.limit, 10) || 50, 1), 100)))
+    params.set('onlyDeficit', actualFilters?.onlyDeficit === false ? 'false' : 'true')
+    if (actualFilters?.since) params.set('since', actualFilters.since)
+
+    const res = await apiRequest(`/experiment/span?${params.toString()}`, actualToken)
+    return {
+      since: res?.since || null,
+      summary: Array.isArray(res?.summary) ? res.summary : [],
+      book: Array.isArray(res?.book) ? res.book : [],
+      cycles: (Array.isArray(res?.cycles) ? res.cycles : []).map((c) => ({
+        ...c,
+        time: formatTime(c.opensAt),
+        date: formatDate(c.opensAt),
+        coveragePct: c.deficitKwh > 0 ? (100 * (c.coveredKwh || 0)) / c.deficitKwh : null,
+        savingsPct: c.baseline > 0 ? (100 * (c.savings || 0)) / c.baseline : null,
+      })),
+      aggregated: Array.isArray(res?.summary) ? res.summary : (Array.isArray(res?.aggregated) ? res.aggregated : []),
+      currentSpan: res?.currentSpan ?? 360,
+    }
+  },
 }
-
-
-

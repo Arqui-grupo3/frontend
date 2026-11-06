@@ -7,7 +7,7 @@ export function Navbar({ activeTab, onSelectTab }) {
     { id: 'cycles', label: 'Historial de Ciclos (RF01)' },
     { id: 'live-market', label: 'Mercado en Vivo (RF02)' },
     { id: 'admin', label: 'Administración (RF04)' },
-    { id: 'experiment', label: 'Experimento de Span (RF06)' },
+    { id: 'span', label: 'Experimento de Span (RF06)' },
     { id: 'audit', label: 'Auditoría (RF05)' },
   ]
 

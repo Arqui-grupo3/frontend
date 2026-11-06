@@ -36,6 +36,7 @@ function AppContent() {
         {activeTab === 'admin' && <MarketAdminView />}
         {activeTab === 'experiment' && <SpanExperimentView />}
         {activeTab === 'audit' && <AuditLogView />}
+        {activeTab === 'span' && <SpanExperimentView />}
       </main>
       <footer className="app-footer">
         <div>
