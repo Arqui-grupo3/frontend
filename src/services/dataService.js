@@ -23,7 +23,7 @@ const KNOWN_CITY_NAMES = {
 
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || (
-  typeof window !== 'undefined' && window.location.hostname.includes('fasantamaria.me')
+  typeof window !== 'undefined' && (window.location.hostname.includes('fasantamaria.me') || window.location.protocol === 'https:')
     ? 'https://api.fasantamaria.me'
     : 'http://localhost:3000'
 )
@@ -404,6 +404,38 @@ export const dataService = {
     return list.map(normalizeCycle)
   },
 
+  getCycleDetail: async (cycleId, token) => {
+    if (!cycleId) return null
+    return await apiRequest(`/cycles/${encodeURIComponent(cycleId)}`, token)
+  },
+
+  getLiveMarket: async (token) => {
+    const res = await apiRequest('/market/live', token)
+    return {
+      offers: Array.isArray(res?.offers) ? res.offers : [],
+      distanceTableMeta: res?.distanceTableMeta || {},
+    }
+  },
+
+  getAdminConfig: async (token) => {
+    return await apiRequest('/admin/config', token)
+  },
+
+  updateAdminConfig: async (config, token) => {
+    return await apiRequest('/admin/config', token, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    })
+  },
+
+  getAdminSwaps: async (token) => {
+    const res = await apiRequest('/admin/swaps', token)
+    return {
+      sellerBids: Array.isArray(res?.sellerBids) ? res.sellerBids : [],
+      walletOperations: Array.isArray(res?.walletOperations) ? res.walletOperations : [],
+    }
+  },
+
   getCycleOperations: async (cycleId, token) => {
     if (!cycleId) return []
     const res = await apiRequest(`/history?cycleId=${encodeURIComponent(cycleId)}&limit=100`, token)
@@ -475,12 +507,18 @@ export const dataService = {
 
   // RF06: experimento de span (resumen por span, detalle por ciclo y contrafactual del libro)
   getSpanExperiment: async (filters = {}, token) => {
+    let actualToken = token
+    let actualFilters = filters
+    if (typeof filters === 'string') {
+      actualToken = filters
+      actualFilters = {}
+    }
     const params = new URLSearchParams()
-    params.set('limit', String(Math.min(Math.max(parseInt(filters.limit, 10) || 50, 1), 100)))
-    params.set('onlyDeficit', filters.onlyDeficit === false ? 'false' : 'true')
-    if (filters.since) params.set('since', filters.since)
+    params.set('limit', String(Math.min(Math.max(parseInt(actualFilters?.limit, 10) || 50, 1), 100)))
+    params.set('onlyDeficit', actualFilters?.onlyDeficit === false ? 'false' : 'true')
+    if (actualFilters?.since) params.set('since', actualFilters.since)
 
-    const res = await apiRequest(`/experiment/span?${params.toString()}`, token)
+    const res = await apiRequest(`/experiment/span?${params.toString()}`, actualToken)
     return {
       since: res?.since || null,
       summary: Array.isArray(res?.summary) ? res.summary : [],
@@ -492,6 +530,8 @@ export const dataService = {
         coveragePct: c.deficitKwh > 0 ? (100 * (c.coveredKwh || 0)) / c.deficitKwh : null,
         savingsPct: c.baseline > 0 ? (100 * (c.savings || 0)) / c.baseline : null,
       })),
+      aggregated: Array.isArray(res?.summary) ? res.summary : (Array.isArray(res?.aggregated) ? res.aggregated : []),
+      currentSpan: res?.currentSpan ?? 360,
     }
   },
 }

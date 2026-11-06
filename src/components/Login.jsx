@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/useAuth'
 
 export function Login() {
-  const { login, error: authError } = useAuth()
+  const { login, loginDev, error: authError } = useAuth()
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -28,6 +28,28 @@ export function Login() {
       <button type="button" className="btn-primary" onClick={handleLogin} disabled={isSubmitting}>
         {isSubmitting ? 'Redirigiendo...' : 'Iniciar sesión con Auth0'}
       </button>
+
+      {import.meta.env.DEV && (
+        <button
+          type="button"
+          onClick={loginDev}
+          style={{
+            marginTop: '12px',
+            width: '100%',
+            padding: '10px',
+            borderRadius: '6px',
+            background: '#EEF5F6',
+            border: '1px solid #DCE5E7',
+            color: '#087782',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          ⚡ Acceder en Modo Local (Operador REE)
+        </button>
+      )}
+
       <div className="login-footer"><small>Ciudad de Re-Estize (REE)</small></div>
     </div>
   </div>
