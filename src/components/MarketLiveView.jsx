@@ -57,7 +57,12 @@ export function MarketLiveView() {
     return () => clearInterval(timer)
   }, [isAuthenticated, getAccessToken])
 
-  const sortedOffers = [...(marketData.offers || [])].sort((a, b) => {
+  const offers = marketData.offers || []
+  const bestEffectivePrice = offers.length > 0
+    ? Math.min(...offers.map((o) => Number(o.effectivePricePerEnergy)))
+    : null
+
+  const sortedOffers = [...offers].sort((a, b) => {
     if (sortBy === 'effectivePrice') {
       return a.effectivePricePerEnergy - b.effectivePricePerEnergy
     }
@@ -111,7 +116,7 @@ export function MarketLiveView() {
         <div className="balance-card balance-energy">
           <span>Mejor Precio Efectivo</span>
           <strong>
-            {sortedOffers.length > 0 ? `$${formatNumber(sortedOffers[0].effectivePricePerEnergy)}` : '—'} <small>cr / kWh</small>
+            {bestEffectivePrice !== null ? `$${formatNumber(bestEffectivePrice)}` : '—'} <small>cr / kWh</small>
           </strong>
         </div>
       </div>

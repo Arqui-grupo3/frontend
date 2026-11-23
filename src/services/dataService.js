@@ -418,14 +418,31 @@ export const dataService = {
   },
 
   getAdminConfig: async (token) => {
-    return await apiRequest('/admin/config', token)
+    return await apiRequest('/config', token)
   },
 
   updateAdminConfig: async (config, token) => {
-    return await apiRequest('/admin/config', token, {
+    const payload = {}
+    if ('marketEnabled' in config) payload.marketEnabled = Boolean(config.marketEnabled)
+    if ('priceFactor' in config && config.priceFactor !== '') payload.priceFactor = Number(config.priceFactor)
+    if ('maxQuantity' in config) {
+      payload.maxQuantity = config.maxQuantity === '' || config.maxQuantity === null
+        ? null
+        : Number.parseInt(config.maxQuantity, 10)
+    }
+    if ('spanSeconds' in config && config.spanSeconds !== '') payload.spanSeconds = Number.parseInt(config.spanSeconds, 10)
+    if ('priceDecayMinutes' in config && config.priceDecayMinutes !== '') payload.priceDecayMinutes = Number.parseInt(config.priceDecayMinutes, 10)
+    if (typeof config.note === 'string' && config.note.trim()) payload.note = config.note.trim()
+
+    return await apiRequest('/config', token, {
       method: 'PUT',
-      body: JSON.stringify(config),
+      body: JSON.stringify(payload),
     })
+  },
+
+  getConfigHistory: async (limit = 15, token) => {
+    const res = await apiRequest(`/config/history?limit=${encodeURIComponent(limit)}`, token)
+    return Array.isArray(res?.items) ? res.items : []
   },
 
   getAdminSwaps: async (token) => {

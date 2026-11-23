@@ -34,7 +34,6 @@ function AppContent() {
         {activeTab === 'cycles' && <CycleHistory />}
         {activeTab === 'live-market' && <MarketLiveView />}
         {activeTab === 'admin' && <MarketAdminView />}
-        {activeTab === 'experiment' && <SpanExperimentView />}
         {activeTab === 'audit' && <AuditLogView />}
         {activeTab === 'span' && <SpanExperimentView />}
       </main>
