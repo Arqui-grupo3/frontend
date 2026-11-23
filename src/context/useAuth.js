@@ -24,12 +24,17 @@ export function useAuth() {
   }, [])
 
   const logoutAll = useCallback((options) => {
+    const hadDevUser = Boolean(localStorage.getItem('energyshark_dev_user'))
     localStorage.removeItem('energyshark_dev_user')
     setDevUser(null)
     if (isAuthenticated && logout) {
-      logout(options)
+      const logoutOpts = options && options.logoutParams
+        ? options
+        : { logoutParams: { returnTo: window.location.origin } }
+      logout(logoutOpts)
+      return
     }
-    if (typeof window !== 'undefined') {
+    if (hadDevUser && typeof window !== 'undefined') {
       window.location.reload()
     }
   }, [isAuthenticated, logout])
