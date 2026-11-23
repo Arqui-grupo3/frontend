@@ -147,6 +147,13 @@ export function ConnectivityView() {
           <div className="loading-state" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
             <p>Consultando conectividad en el backend (https://api.fasantamaria.me/connectivity)...</p>
           </div>
+        ) : error ? (
+          <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <h3>No se pudo cargar la información</h3>
+            <p style={{ marginTop: '0.5rem', opacity: 0.8 }}>
+              Ocurrió un problema al consultar el servicio de conectividad.
+            </p>
+          </div>
         ) : totalRoutes === 0 ? (
           <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
             <h3>Sin tabla de distancias registrada</h3>

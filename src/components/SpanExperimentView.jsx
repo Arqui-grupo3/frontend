@@ -57,7 +57,7 @@ export function SpanExperimentView() {
   const handleRefresh = () => setRefreshIndex((prev) => prev + 1)
 
   // Totales de los ciclos con déficit, sumando todos los spans
-  const totals = data.summary.reduce(
+  const totals = (data.summary || []).reduce(
     (acc, s) => ({
       cycles: acc.cycles + (s.cycles || 0),
       deficit: acc.deficit + (s.deficitKwh || 0),
@@ -67,7 +67,8 @@ export function SpanExperimentView() {
     }),
     { cycles: 0, deficit: 0, covered: 0, baseline: 0, savings: 0 }
   )
-  const bestBook = data.book.reduce(
+
+  const bestBook = (data.book || []).reduce(
     (best, b) => (b.avgBestPrice !== null && (best === null || b.avgBestPrice < best.avgBestPrice) ? b : best),
     null
   )
@@ -76,7 +77,7 @@ export function SpanExperimentView() {
     <div className="view-container">
       <div className="heading">
         <div>
-          <p className="eyebrow">Estrategia del Comprador</p>
+          <p className="eyebrow">Estrategia del Comprador · RF06</p>
           <h1>Experimento de Span</h1>
           <p>
             Cuánto conviene esperar desde <code>opensAt</code> antes de enviar el bid: precio pagado, déficit cubierto y ahorro frente a no comprar.
@@ -126,7 +127,7 @@ export function SpanExperimentView() {
             <div className="balance-card">
               <span>Ciclos con déficit</span>
               <strong>{fmtInt(totals.cycles)}</strong>
-              <small>{data.summary.length} valor{data.summary.length === 1 ? '' : 'es'} de span probado{data.summary.length === 1 ? '' : 's'}</small>
+              <small>{(data.summary || []).length} valor{(data.summary || []).length === 1 ? '' : 'es'} de span probado{(data.summary || []).length === 1 ? '' : 's'}</small>
             </div>
             <div className="balance-card">
               <span>Déficit cubierto vía mercado</span>
@@ -161,7 +162,7 @@ export function SpanExperimentView() {
                 </tr>
               </thead>
               <tbody>
-                {data.summary.length > 0 ? (
+                {(data.summary || []).length > 0 ? (
                   data.summary.map((s) => (
                     <tr key={s.spanSeconds}>
                       <td><strong>{fmtSpan(s.spanSeconds)}</strong></td>
@@ -207,7 +208,7 @@ export function SpanExperimentView() {
                 </tr>
               </thead>
               <tbody>
-                {data.book.length > 0 ? (
+                {(data.book || []).length > 0 ? (
                   data.book.map((b) => (
                     <tr key={b.spanSeconds}>
                       <td><strong>{fmtSpan(b.spanSeconds)}</strong></td>
@@ -271,7 +272,7 @@ export function SpanExperimentView() {
                 </tr>
               </thead>
               <tbody>
-                {data.cycles.length > 0 ? (
+                {(data.cycles || []).length > 0 ? (
                   data.cycles.map((c) => (
                     <tr key={c.cycleId}>
                       <td>
